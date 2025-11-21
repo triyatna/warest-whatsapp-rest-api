@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>WARest Login</title>
+    <link rel="icon" href="/media/favicon.png" />
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        --bg: #050812;
+        --card: rgba(11, 17, 35, 0.92);
+        --border: rgba(255, 255, 255, 0.08);
+        --accent: #60a5fa;
+        --accent-strong: #3b82f6;
+        --danger: #f87171;
+        --text: #f3f5ff;
+        --muted: #94a3b8;
+        --radius: 18px;
+        --ring: 0 0 0 3px rgba(96, 165, 250, 0.35);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        color: var(--text);
+        background: radial-gradient(
+            circle at 10% 20%,
+            rgba(76, 201, 240, 0.18),
+            transparent 40%
+          ),
+          radial-gradient(
+            circle at 90% 10%,
+            rgba(139, 92, 246, 0.18),
+            transparent 35%
+          ),
+          linear-gradient(165deg, #050812 0%, #090f1f 60%, #05070f 100%);
+      }
+      main {
+        width: min(420px, 100%);
+      }
+      .login-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 32px;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.55);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+      }
+      .login-logo {
+        display: block;
+        margin: 0 auto 16px;
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+      }
+      .login-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 16px;
+        justify-content: center;
+      }
+      .login-header img {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin: 0;
+      }
+      p.subtitle {
+        margin: 4px 0 24px;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .input-with-icon {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+      .input-with-icon input {
+        padding-right: 44px;
+      }
+      .input-with-icon button {
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        transition: color 0.2s ease;
+      }
+      .input-with-icon button:focus-visible {
+        outline: none;
+        box-shadow: none;
+      }
+      .input-with-icon button:hover {
+        color: var(--text);
+      }
+      .icon-eye {
+        width: 18px;
+        height: 18px;
+      }
+      .icon-eye.hidden {
+        display: none;
+      }
+      label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(5, 8, 18, 0.65);
+        color: var(--text);
+        font-size: 1rem;
+        transition: border 0.15s ease, box-shadow 0.15s ease;
+      }
+      input:focus-visible {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: var(--ring);
+      }
+      button[type="submit"] {
+        border: none;
+        border-radius: 12px;
+        padding: 12px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        background: linear-gradient(
+          120deg,
+          var(--accent),
+          var(--accent-strong)
+        );
+        color: #020617;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      button[type="submit"]:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+      button[type="submit"]:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 7px 20px rgba(96, 165, 250, 0.35);
+      }
+      .login-msg {
+        min-height: 20px;
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+      .login-msg.show {
+        color: var(--danger);
+      }
+      .login-info {
+        margin-top: 20px;
+        font-size: 0.85rem;
+        color: var(--muted);
+        text-align: center;
+      }
+      .login-info a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .screen-reader-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+
+      @media (max-width: 520px) {
+        body {
+          padding: 16px;
+        }
+        .login-card {
+          padding: 24px;
+        }
+        .login-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="login-card" aria-labelledby="login-title">
+        <img
+          src="/media/warest-logo.png"
+          alt="WARest Logo"
+          class="login-logo"
+          width="48"
+          height="48"
+        />
+        <div class="login-header">
+          <div>
+            <h1 id="login-title">Sign in to WARest</h1>
+          </div>
+        </div>
+        <form id="loginForm" novalidate>
+          <div>
+            <label for="loginUsername">Username</label>
+            <input
+              id="loginUsername"
+              name="username"
+              type="text"
+              autocomplete="username"
+              placeholder="Enter username"
+              required
+            />
+          </div>
+          <div>
+            <label for="loginPassword">Password</label>
+            <div class="input-with-icon">
+              <input
+                id="loginPassword"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                placeholder="Enter password"
+                required
+              />
+              <button
+                id="togglePassword"
+                type="button"
+                aria-label="Show password"
+                title="Show password"
+              >
+                <svg
+                  class="icon-eye icon-eye-open"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M2.458 12C3.732 7.943 7.522 5 13 5s9.268 2.943 10.542 7c-1.274 4.057-5.064 7-10.542 7S3.732 16.057 2.458 12z"
+                  />
+                  <circle cx="13" cy="12" r="3.2" />
+                </svg>
+                <svg
+                  class="icon-eye icon-eye-closed hidden"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M3 3l18 18M9.9 9.9a3 3 0 0 0 4.2 4.2M6.71 6.71C4.58 8.07 2.91 10.03 1.77 12c1.83 3.19 5.09 6 10.23 6 1.54 0 2.97-.27 4.26-.74M17.29 17.29C19.42 15.93 21.09 13.97 22.23 12c-1.83-3.19-5.09-6-10.23-6-1.11 0-2.18.15-3.19.42"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <input
+            id="loginWebsite"
+            type="text"
+            class="screen-reader-only"
+            tabindex="-1"
+            aria-hidden="true"
+            autocomplete="off"
+          />
+          <div class="login-msg" id="loginError" aria-live="polite"></div>
+          <button type="submit" id="loginSubmit">Sign In</button>
+        </form>
+        <p class="login-info">Need help? Contact your WARest administrator.</p>
+      </section>
+    </main>
+    <script src="/auth.js"></script>
+    <script>
+      (() => {
+        const params = new URLSearchParams(window.location.search || "");
+        const nextRaw = params.get("next") || "/";
+        const reason = params.get("reason") || "";
+        const subtitle = document.getElementById("loginSubtitle");
+        const errBox = document.getElementById("loginError");
+        if (reason && subtitle) subtitle.textContent = reason;
+
+        const form = document.getElementById("loginForm");
+        const btn = document.getElementById("loginSubmit");
+        const usernameInput = document.getElementById("loginUsername");
+        const passwordInput = document.getElementById("loginPassword");
+        const honeypot = document.getElementById("loginWebsite");
+        const togglePassword = document.getElementById("togglePassword");
+        const AUTH = window.WAREST_AUTH || null;
+
+        const showAutoRedirect = (msg) => {
+          if (subtitle) {
+            subtitle.textContent =
+              msg || "Detecting existing WARest session...";
+          }
+          if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Checking session...";
+          }
+        };
+
+        const attemptAutoLogin = async () => {
+          try {
+            if (!AUTH?.getSession) return false;
+            const session = AUTH.getSession() || {};
+            if (!session.apiKey) return false;
+            showAutoRedirect(
+              `Signed in as ${session.username || "user"} — redirecting...`
+            );
+            await Promise.resolve(
+              AUTH.ensureDocsSession?.(session.apiKey)
+            ).catch(() => {});
+            redirectAfterLogin();
+            return true;
+          } catch {
+            return false;
+          }
+        };
+
+        if (AUTH) {
+          attemptAutoLogin();
+          AUTH.subscribe?.((event) => {
+            if (event === "login") attemptAutoLogin();
+          });
+        }
+
+        if (togglePassword && passwordInput) {
+          let reveal = false;
+          togglePassword.addEventListener("click", () => {
+            reveal = !reveal;
+            passwordInput.type = reveal ? "text" : "password";
+            togglePassword.setAttribute(
+              "aria-label",
+              reveal ? "Hide password" : "Show password"
+            );
+            togglePassword.setAttribute(
+              "title",
+              reveal ? "Hide password" : "Show password"
+            );
+            const iconOpen = togglePassword.querySelector(".icon-eye-open");
+            const iconClosed = togglePassword.querySelector(".icon-eye-closed");
+            if (iconOpen && iconClosed) {
+              iconOpen.classList.toggle("hidden", reveal);
+              iconClosed.classList.toggle("hidden", !reveal);
+            }
+          });
+        }
+
+        try {
+          const savedUser = localStorage.getItem("wa.username");
+          if (savedUser) usernameInput.value = savedUser;
+        } catch {}
+
+        const buildTarget = () => {
+          try {
+            const nextUrl = new URL(nextRaw, window.location.origin);
+            if (nextUrl.origin !== window.location.origin) return "/";
+            return nextUrl.pathname + nextUrl.search + nextUrl.hash;
+          } catch {
+            return "/";
+          }
+        };
+
+        const redirectAfterLogin = () => {
+          window.location.replace(buildTarget());
+        };
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          if (honeypot.value.trim()) return;
+          const username = usernameInput.value.trim();
+          const password = passwordInput.value;
+          if (!username || !password) {
+            errBox.textContent = "Username and password are required.";
+            errBox.classList.add("show");
+            return;
+          }
+          const defaultText = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = "Signing in...";
+          errBox.textContent = "";
+          errBox.classList.remove("show");
+          try {
+            const resp = await fetch("/api/auth/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username, password }),
+              credentials: "same-origin",
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok) {
+              const retryAfter = data?.retryAfter;
+              let message =
+                data?.error || `Login failed (status ${resp.status})`;
+              if (retryAfter) {
+                message += ` — retry after ${retryAfter}s`;
+              }
+              throw new Error(message);
+            }
+            try {
+              const auth = window.WAREST_AUTH;
+              if (auth && typeof auth.setSession === "function") {
+                auth.setSession(
+                  {
+                    apiKey: data.apiKey || "",
+                    username: data.username || username,
+                    baseUrl: window.location.origin,
+                    isAdmin: !!data.isAdmin,
+                  },
+                  { broadcast: true, source: "login" }
+                );
+                auth.ensureDocsSession?.(data.apiKey || "");
+              } else {
+                localStorage.setItem("wa.apiKey", data.apiKey || "");
+                localStorage.setItem("wa.username", data.username || username);
+                localStorage.setItem("wa.baseUrl", window.location.origin);
+                localStorage.setItem("wa.isAdmin", data.isAdmin ? "1" : "");
+              }
+            } catch {}
+            redirectAfterLogin();
+          } catch (err) {
+            errBox.textContent = err?.message || "Login failed.";
+            errBox.classList.add("show");
+          } finally {
+            btn.disabled = false;
+            btn.textContent = defaultText;
+            if (passwordInput) passwordInput.value = "";
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

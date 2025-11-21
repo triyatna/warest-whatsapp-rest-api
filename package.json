@@ -1,0 +1,66 @@
+{
+  "name": "warest",
+  "version": "0.3.41",
+  "description": "Whatsapp REST API multi device, multi sessions. Based on Baileys.",
+  "main": "src/index.js",
+  "author": "Tri Yatna",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "win-dev": "set NODE_ENV=development&&nodemon src/index.js",
+    "dev": "NODE_ENV=development node src/index.js",
+    "start": "NODE_ENV=production node src/index.js",
+    "db:status": "node src/database/models/cli.js db:status",
+    "db:migrate": "node src/database/models/cli.js migrate:latest",
+    "db:rollback": "node src/database/models/cli.js migrate:rollback",
+    "db:rollback:all": "node src/database/models/cli.js migrate:rollback --all",
+    "db:seed": "node src/database/models/cli.js seed:run",
+    "db:make:migration": "node src/database/models/cli.js migrate:make",
+    "db:make:seed": "node src/database/models/cli.js seed:make",
+    "db:ping": "node src/database/models/cli.js db:ping"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.927.0",
+    "@aws-sdk/s3-request-presigner": "^3.927.0",
+    "@whiskeysockets/baileys": "^6.7.21",
+    "axios": "^1.7.8",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "ffmpeg-static": "^5.2.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "helmet": "^7.1.0",
+    "https-proxy-agent": "^7.0.4",
+    "ioredis": "^5.8.2",
+    "jimp": "^1.6.0",
+    "knex": "^3.1.0",
+    "link-preview-js": "^3.0.14",
+    "lodash": "^4.17.21",
+    "memjs": "^1.3.2",
+    "mime-types": "^2.1.35",
+    "mongodb": "^7.0.0",
+    "mysql2": "^3.15.2",
+    "pg": "^8.16.3",
+    "pino": "^9.5.0",
+    "pino-pretty": "^10.2.0",
+    "qrcode": "^1.5.3",
+    "readline": "^1.3.0",
+    "sharp": "^0.33.4",
+    "socket.io": "^4.7.2",
+    "sqlite3": "^5.1.7",
+    "swagger-ui-express": "^5.0.1",
+    "ulid": "^2.3.0",
+    "uuid": "^9.0.1",
+    "yaml": "^2.8.1"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "credentials/*",
+      "data/*"
+    ]
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "nodemon": "^3.1.10"
+  }
+}
