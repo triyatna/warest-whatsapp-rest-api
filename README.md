@@ -29,9 +29,13 @@ WAREST is a unofficial WhatsApp REST API (multi-device, multi-session). It expos
 
 ## UI Screenshots
 
+<div align="center">
+
 ![WAREST dashboard](data/public/media/ui-warest-1.png)
 ![Session list](data/public/media/ui-warest-2.png)
 ![Docs viewer](data/public/media/ui-warest-docs.png)
+
+</div>
 
 ---
 
