@@ -1,17 +1,57 @@
-name: Docker Image CI
+name: Build & Publish Docker Image
 
 on:
   push:
-     tags:
-      - 'v*'
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'  
+  workflow_dispatch:           
 
 jobs:
-
-  build:
-
+  build-and-push:
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
+    env:
+      IMAGE_NAME: triyatna/warest-whatsapp-rest-api
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # biar tag kebaca
+
+      - name: Set VERSION from tag
+        run: |
+          # contoh: GITHUB_REF_NAME = v0.3.41
+          RAW_TAG="${GITHUB_REF_NAME}"
+          VERSION="${RAW_TAG#v}"  # buang huruf 'v' di depan -> 0.3.41
+          echo "RAW_TAG=${RAW_TAG}" >> $GITHUB_ENV
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "VERSION set to: ${VERSION}"
+
+      - name: Set up QEMU (multi-arch)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push (multi-arch)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+            ${{ env.IMAGE_NAME }}:latest
+          build-args: |
+            BUILD_VERSION=${{ env.VERSION }}
+            BUILD_COMMIT=${{ github.sha }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
