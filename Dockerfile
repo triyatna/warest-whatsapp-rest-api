@@ -13,7 +13,7 @@ RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit
 
 FROM base AS runner
 
-ARG BUILD_VERSION=0.3.43
+ARG BUILD_VERSION=0.3.44-prerelease
 ARG BUILD_COMMIT=unknown
 ARG BUILD_DATE=unknown
 LABEL org.opencontainers.image.title="warest-whatsapp-rest-api" \
