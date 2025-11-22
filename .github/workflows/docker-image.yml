@@ -3,33 +3,37 @@ name: Build & Publish Docker Image
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'  
-  workflow_dispatch:           
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
 
 jobs:
   build-and-push:
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      packages: write
+
     env:
-      IMAGE_NAME: triyatna/warest-whatsapp-rest-api
+      IMAGE_NAME_DOCKERHUB: triyatna/warest-whatsapp-rest-api
+      IMAGE_NAME_GHCR: ghcr.io/triyatna/warest-whatsapp-rest-api
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # biar tag kebaca
+          fetch-depth: 0
 
-      - name: Set VERSION from tag
+      - name: Set VERSION
         run: |
-          # contoh: GITHUB_REF_NAME = v0.3.41
           RAW_TAG="${GITHUB_REF_NAME}"
-          VERSION="${RAW_TAG#v}"  # buang huruf 'v' di depan -> 0.3.41
+          VERSION="${RAW_TAG#v}"
           echo "RAW_TAG=${RAW_TAG}" >> $GITHUB_ENV
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
           echo "VERSION set to: ${VERSION}"
 
-      - name: Set up QEMU (multi-arch)
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
@@ -41,7 +45,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push (multi-arch)
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -49,8 +60,10 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ env.IMAGE_NAME }}:${{ env.VERSION }}
-            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME_DOCKERHUB }}:${{ env.VERSION }}
+            ${{ env.IMAGE_NAME_DOCKERHUB }}:latest
+            ${{ env.IMAGE_NAME_GHCR }}:${{ env.VERSION }}
+            ${{ env.IMAGE_NAME_GHCR }}:latest
           build-args: |
             BUILD_VERSION=${{ env.VERSION }}
             BUILD_COMMIT=${{ github.sha }}
