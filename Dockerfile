@@ -2,8 +2,10 @@ ARG NODE_VERSION=22-bookworm-slim
 
 FROM node:${NODE_VERSION} AS base
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl dumb-init git \
-    && rm -rf /var/lib/apt/lists/*
+  && apt-get install -y --no-install-recommends curl dumb-init git \
+  && git config --global url."https://github.com/".insteadOf "ssh://git@github.com/" \
+  && rm -rf /var/lib/apt/lists/*
+  
 WORKDIR /app
 
 FROM base AS deps
@@ -41,7 +43,7 @@ VOLUME ["/app/data"]
 EXPOSE 7308
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD curl -fsS http://127.0.0.1:7308/api/v1/server/healthz || exit 1
+  CMD curl -fsS http://127.0.0.1:7308/api/v1/server/ping || exit 1
 
 USER node
 ENTRYPOINT ["dumb-init", "--"]
