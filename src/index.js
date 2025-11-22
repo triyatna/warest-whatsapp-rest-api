@@ -495,9 +495,9 @@ io.on("connection", async (socket) => {
     }
 
     server.listen(config.port, config.host, () => {
-      startupLogger.info(`WA API listening on ${hostDisplay}`);
       startupLogger.info(`UI:    ${hostDisplay}/`);
       startupLogger.info(`Docs:  ${hostDisplay}/docs`);
+      startupLogger.info(`WA API listening on ${hostDisplay}/api/v1`);
     });
   } catch (e) {
     logger.error(e, "Fatal during bootstrap");
