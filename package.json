@@ -1,6 +1,6 @@
 {
   "name": "warest",
-  "version": "0.3.41",
+  "version": "0.3.42",
   "description": "Whatsapp REST API multi device, multi sessions. Based on Baileys.",
   "main": "src/index.js",
   "author": "Tri Yatna",
