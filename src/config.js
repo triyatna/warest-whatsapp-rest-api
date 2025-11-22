@@ -261,7 +261,7 @@ export const config = {
   },
   proxy: proxyConfig,
   log: {
-    pretty: env("LOG_PRETTY", "true") === "true",
+    pretty: env("LOG_PRETTY", "false") === "true",
     level: env("LOG_LEVEL", "info"),
   },
   uploadLimits: {

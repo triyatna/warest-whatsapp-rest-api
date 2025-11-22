@@ -2,8 +2,8 @@ ARG NODE_VERSION=22-bookworm-slim
 
 FROM node:${NODE_VERSION} AS base
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends curl dumb-init \
-  && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends curl dumb-init git \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 FROM base AS deps

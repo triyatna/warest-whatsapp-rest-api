@@ -417,7 +417,10 @@ async function executeRestartStrategy(runtime, meta) {
       break;
     case "docker":
       signalDockerForRestart(meta);
-      scheduleProcessExit(0);
+      // Use non-zero exit code so Docker/containers configured with
+      // `restart: on-failure` or similar policies reliably restart
+      // the container after a manual/scheduled restart request.
+      scheduleProcessExit(1);
       break;
     case "node":
     default:
