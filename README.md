@@ -100,7 +100,6 @@ docker run -d \
   -e WAREST_AUTHADMIN_PASSWORD=supersecret \
   -e WAREST_ADMIN_APIKEY=warest-admin-key \
   -e WAREST_BASE_URL=https://example.com \
-  -e WAREST_ALLOWED_ORIGINS=https://example.com \
   -e GENERIC_TIMEZONE=UTC \
   -e TZ_LOCALE=en-US \
   -v warest_data:/app/data \
@@ -125,7 +124,6 @@ services:
       WAREST_AUTHADMIN_PASSWORD: supersecret
       WAREST_ADMIN_APIKEY: warest-admin-key
       WAREST_BASE_URL: https://example.com
-      WAREST_ALLOWED_ORIGINS: https://example.com
       GENERIC_TIMEZONE: UTC
       TZ_LOCALE: en-US
     volumes:
@@ -263,7 +261,6 @@ GENERIC_TIMEZONE=UTC
 TZ_LOCALE=en-US
 NODE_ENV=production
 WAREST_BASE_URL=https://api.example.com
-WAREST_ALLOWED_ORIGINS=https://api.example.com
 WAREST_AUTHADMIN_USERNAME=admin
 WAREST_AUTHADMIN_PASSWORD=supersecret
 WAREST_ADMIN_APIKEY=warest-admin-key
