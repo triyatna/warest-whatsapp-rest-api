@@ -5,7 +5,7 @@
 
 </div>
 
-[![Release](https://img.shields.io/badge/version-0.3.41-blue)](#) [![Node](https://img.shields.io/badge/node-%3E%3D22-43853d)](#) [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/triyatna/warest-whatsapp-rest-api)](#) [![Node](https://img.shields.io/badge/node-%3E%3D22-43853d)](#) [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
 WAREST is a unofficial WhatsApp REST API (multi-device, multi-session). It exposes a REST API, webhooks, and a small UI so you can automate messaging, manage sessions, and integrate WhatsApp flows into your own stack.
 
@@ -96,7 +96,6 @@ docker run -d \
   --restart always \
   -p 7308:7308 \
   -e NODE_ENV=production \
-  -e PORT=7308 \
   -e WAREST_AUTHADMIN_USERNAME=admin \
   -e WAREST_AUTHADMIN_PASSWORD=supersecret \
   -e WAREST_ADMIN_APIKEY=warest-admin-key \
@@ -122,7 +121,6 @@ services:
       - "7308:7308"
     environment:
       NODE_ENV: production
-      PORT: 7308
       WAREST_AUTHADMIN_USERNAME: admin
       WAREST_AUTHADMIN_PASSWORD: supersecret
       WAREST_ADMIN_APIKEY: warest-admin-key
