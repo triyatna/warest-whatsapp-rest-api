@@ -2412,6 +2412,8 @@ function showEdit(flag) {
     err.textContent = "";
     err.style.display = "none";
   }
+  const pf = el("editPreflightResult");
+  if (pf) pf.textContent = "";
   if (flag) {
     try {
       setTimeout(() => {
@@ -2436,7 +2438,14 @@ el("btnEditSave")?.addEventListener("click", async (e) => {
     setBtnBusy(btn, true, "Save", "Saving...");
     const webhookUrl = el("editWebhookUrl")?.value?.trim();
     const webhookSecret = el("editWebhookSecret")?.value;
-    if (webhookUrl && webhookSecret) {
+    const pfChoice = String(
+      el("editPreflightVerify")?.value || "yes"
+    ).toLowerCase();
+    const wantsPreflight = pfChoice !== "no";
+    const shouldRequestPreflight = !!webhookUrl && wantsPreflight;
+    const pfArea = el("editPreflightResult");
+    if (pfArea) pfArea.textContent = "";
+    if (shouldRequestPreflight && webhookSecret) {
       const r = await api("/api/webhooks/preflight", "POST", {
         sessionId: editSessionId,
         url: webhookUrl,
@@ -2444,9 +2453,8 @@ el("btnEditSave")?.addEventListener("click", async (e) => {
       });
       const arr = extractResultsArray(r);
       const ok = arr.length && arr.every((x) => x.ok);
-      const area = el("editPreflightResult");
-      if (area) {
-        area.textContent = arr
+      if (pfArea) {
+        pfArea.textContent = arr
           .map(
             (x) =>
               `${x.target || webhookUrl}: ${x.ok ? "OK" : "FAIL"}${
@@ -2462,7 +2470,8 @@ el("btnEditSave")?.addEventListener("click", async (e) => {
     const payload = {
       webhookUrl: webhookUrl || "",
       webhookSecret: webhookSecret || "",
-      preflightVerify: !!webhookUrl,
+      preflightVerify: shouldRequestPreflight,
+      preflight: shouldRequestPreflight,
     };
     const updated = await api(
       `/api/v1/session/${encodeURIComponent(editSessionId)}/config`,
@@ -2630,9 +2639,26 @@ function attachSessionCardsHandlers(wrap) {
         const idInp = el("editSessionId");
         const whUrlInp = el("editWebhookUrl");
         const whSecInp = el("editWebhookSecret");
+        const pfSel = el("editPreflightVerify");
         if (idInp) idInp.value = id;
         if (whUrlInp) whUrlInp.value = detail.webhookUrl || "";
         if (whSecInp) whSecInp.value = detail.webhookSecret || "";
+        if (pfSel) {
+          const detailObj =
+            detail && typeof detail === "object" ? detail : Object.create(null);
+          let defaultPref = "yes";
+          if (
+            Object.prototype.hasOwnProperty.call(detailObj, "preflightVerify")
+          ) {
+            defaultPref =
+              detailObj.preflightVerify === false ? "no" : "yes";
+          } else if (
+            Object.prototype.hasOwnProperty.call(detailObj, "preflight")
+          ) {
+            defaultPref = detailObj.preflight === false ? "no" : "yes";
+          }
+          pfSel.value = defaultPref || "no";
+        }
         try {
           const urlNow = (whUrlInp?.value || "").trim();
           const secNow = (whSecInp?.value || "").trim();
