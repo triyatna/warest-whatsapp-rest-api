@@ -28,7 +28,6 @@ LABEL org.opencontainers.image.title="warest-whatsapp-rest-api" \
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=7308 \
-    ALLOWED_ORIGINS=*
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY package*.json ./
