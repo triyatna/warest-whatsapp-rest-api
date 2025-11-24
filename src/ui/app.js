@@ -11,6 +11,81 @@ const LS_KEYS = {
   loginMode: "wa.loginMode",
 };
 
+const dynamicScriptPromises = new Map();
+const dynamicStylePromises = new Map();
+
+const appendToHead = (node) => {
+  if (!node || typeof document === "undefined") return;
+  const target =
+    document.head ||
+    document.getElementsByTagName("head")[0] ||
+    document.body ||
+    document.documentElement;
+  target?.appendChild(node);
+};
+
+function loadScriptOnce(src) {
+  if (!src || typeof document === "undefined") return Promise.resolve(null);
+  if (dynamicScriptPromises.has(src)) return dynamicScriptPromises.get(src);
+  const promise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.onload = () => resolve(script);
+    script.onerror = (err) => {
+      dynamicScriptPromises.delete(src);
+      reject(err || new Error(`Failed to load script: ${src}`));
+    };
+    appendToHead(script);
+  });
+  dynamicScriptPromises.set(src, promise);
+  return promise;
+}
+
+function loadStyleOnce(href) {
+  if (!href || typeof document === "undefined") return Promise.resolve(null);
+  if (dynamicStylePromises.has(href)) return dynamicStylePromises.get(href);
+  const promise = new Promise((resolve, reject) => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.onload = () => resolve(link);
+    link.onerror = (err) => {
+      dynamicStylePromises.delete(href);
+      reject(err || new Error(`Failed to load stylesheet: ${href}`));
+    };
+    appendToHead(link);
+  });
+  dynamicStylePromises.set(href, promise);
+  return promise;
+}
+
+const ensureLeafletReady = (() => {
+  let loading = null;
+  return () => {
+    if (typeof window !== "undefined" && window.L) {
+      return Promise.resolve(window.L);
+    }
+    if (loading) return loading;
+    loading = Promise.all([
+      loadStyleOnce("/vendor/leaflet.css"),
+      loadScriptOnce("/vendor/leaflet.js"),
+    ])
+      .then(() => {
+        if (!window.L) {
+          throw new Error("Leaflet failed to initialize");
+        }
+        return window.L;
+      })
+      .catch((err) => {
+        loading = null;
+        throw err;
+      });
+    return loading;
+  };
+})();
+
 let ioClient = null;
 let currentSessionId = localStorage.getItem(LS_KEYS.currentSessionId) || "";
 let editSessionId = null;
@@ -387,6 +462,35 @@ let countryOptionsReady = false;
 
 const WEBHOOK_EVENT_TAGS = ["message_received"];
 const el = (id) => document.getElementById(id);
+
+const normalizePreflightChoice = (value) =>
+  String(value || "yes").toLowerCase() === "no" ? "no" : "yes";
+let editPreflightChoice = "yes";
+const getPreflightToggle = () => el("editPreflightVerify");
+const setPreflightChoice = (value, { syncInput = true } = {}) => {
+  const normalized = normalizePreflightChoice(value);
+  editPreflightChoice = normalized;
+  const input = getPreflightToggle();
+  if (input) {
+    input.dataset.choice = normalized;
+    if (syncInput) input.checked = normalized !== "no";
+  }
+  return normalized;
+};
+const readPreflightChoice = () => {
+  const input = getPreflightToggle();
+  if (input) return input.checked ? "yes" : "no";
+  return normalizePreflightChoice(editPreflightChoice);
+};
+(function initPreflightChoice() {
+  const input = getPreflightToggle();
+  if (!input) return;
+  setPreflightChoice(input.checked ? "yes" : "no", { syncInput: false });
+  input.addEventListener("change", (ev) => {
+    const val = ev?.target?.checked ? "yes" : "no";
+    setPreflightChoice(val, { syncInput: false });
+  });
+})();
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 const LOGIN_ROUTE = "/login";
 
@@ -1169,7 +1273,7 @@ function startQrCountdown({ sessionId, durationSec }) {
         setQRLoading(false);
         showQrRefreshOverlay({ sticky: true });
         if (meta && activeQrSessionId && !isPairingFlowActive()) {
-          meta.textContent = `Session: ${activeQrSessionId}  refresh paused`;
+          meta.textContent = `Session: ${activeQrSessionId}`;
         }
       }
       try {
@@ -1179,7 +1283,7 @@ function startQrCountdown({ sessionId, durationSec }) {
       return;
     }
     if (meta && activeQrSessionId && !isPairingFlowActive()) {
-      meta.textContent = `Session: ${activeQrSessionId}  QR refresh in ${left}s`;
+      meta.textContent = `Session: ${activeQrSessionId}`;
     }
     if (left <= 1) {
       setQRLoading(true, "Refreshing QR...");
@@ -1232,7 +1336,7 @@ function renderQRImage(qr, sessionId, durationSec) {
   }
   try {
     if (!isPairingFlowActive()) {
-      if (meta) meta.textContent = `Session: ${sessionId}  QR refresh in ...`;
+      if (meta) meta.textContent = `Session: ${sessionId}`;
       if (typeof durationSec === "number")
         qrDefaultDuration = clampQrDuration(durationSec || 20);
       qrPausedForInactivity = false;
@@ -1984,13 +2088,17 @@ function connectSocket({ silent = false } = {}) {
       if (reason !== "io client disconnect")
         toast("Disconnected: " + reason, "warn");
     });
-    ioClient.on("qr", ({ id, qr, qrDuration }) => {
+    ioClient.on("qr", ({ id, qr, qrDataUrl, qrDuration }) => {
       if (id !== currentSessionId) return;
       if (isSessionOpen(id)) return;
       if (isPairingFlowActive()) return;
       if (typeof qrDuration === "number")
         qrDefaultDuration = clampQrDuration(qrDuration);
-      renderQRImage(qr, id, Number(qrDuration || qrDefaultDuration));
+      renderQRImage(
+        qrDataUrl || qr,
+        id,
+        Number(qrDuration || qrDefaultDuration)
+      );
     });
     ioClient.on("pairing_code", ({ id, code }) => {
       if (id !== currentSessionId) return;
@@ -2438,9 +2546,7 @@ el("btnEditSave")?.addEventListener("click", async (e) => {
     setBtnBusy(btn, true, "Save", "Saving...");
     const webhookUrl = el("editWebhookUrl")?.value?.trim();
     const webhookSecret = el("editWebhookSecret")?.value;
-    const pfChoice = String(
-      el("editPreflightVerify")?.value || "yes"
-    ).toLowerCase();
+    const pfChoice = readPreflightChoice();
     const wantsPreflight = pfChoice !== "no";
     const shouldRequestPreflight = !!webhookUrl && wantsPreflight;
     const pfArea = el("editPreflightResult");
@@ -2650,14 +2756,14 @@ function attachSessionCardsHandlers(wrap) {
           if (
             Object.prototype.hasOwnProperty.call(detailObj, "preflightVerify")
           ) {
-            defaultPref =
-              detailObj.preflightVerify === false ? "no" : "yes";
+            defaultPref = detailObj.preflightVerify === false ? "no" : "yes";
           } else if (
             Object.prototype.hasOwnProperty.call(detailObj, "preflight")
           ) {
             defaultPref = detailObj.preflight === false ? "no" : "yes";
           }
-          pfSel.value = defaultPref || "no";
+          pfSel.checked = (defaultPref || "no") !== "no";
+          setPreflightChoice(defaultPref || "no", { syncInput: false });
         }
         try {
           const urlNow = (whUrlInp?.value || "").trim();
@@ -2793,7 +2899,7 @@ el("btnRefresh")?.addEventListener("click", async (ev) => {
     if (!wrap) return;
     if (items.length === 0) {
       wrap.innerHTML =
-        '<div class="muted" style="text-align:center; padding: 20px;">No sessions. Create one above to get started.</div>';
+        '<div class="muted no-session" style="text-align:center; margin:0 auto; padding: 20px;">No sessions. Create one above to get started.</div>';
       updateActiveUI();
       return;
     }
@@ -3840,8 +3946,10 @@ function buildLocationForm(root) {
     <div class="row mt-6"><span class="inline-note">Click map to set point, or search a place. Lat/Lng auto-filled.</span></div>
   `;
   let map, marker;
-  const initMap = () => {
-    if (!window.L || map) return;
+  const initMap = async () => {
+    if (map) return;
+    const L = await ensureLeafletReady();
+    if (!L) throw new Error("Leaflet unavailable");
     map = L.map("leafletMap").setView([-6.2, 106.8], 10);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
@@ -3952,7 +4060,16 @@ function buildLocationForm(root) {
     el("loc_search_btn")?.addEventListener("click", doSearch);
     searchBox?.addEventListener("input", debounce(doSearch, 250));
   };
-  setTimeout(initMap, 0);
+  setTimeout(() => {
+    initMap().catch((err) => {
+      console.warn("[WAREST_UI] Failed to initialize map", err);
+      const mapHost = el("leafletMap");
+      if (mapHost) {
+        mapHost.innerHTML =
+          '<div class="inline-note error-text">Failed to load the map. Please retry.</div>';
+      }
+    });
+  }, 0);
   _msgModalSendHandler = async () => {
     const to = el("loc_to2")?.value.trim();
     const lat = parseFloat(el("loc_lat2")?.value);

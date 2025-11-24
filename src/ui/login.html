@@ -11,153 +11,206 @@
     <style>
       :root {
         color-scheme: dark;
-        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
           "Segoe UI", sans-serif;
-        --bg: #050812;
-        --card: rgba(11, 17, 35, 0.92);
-        --border: rgba(255, 255, 255, 0.08);
+        --bg: #020617;
+        --card: rgba(10, 17, 35, 0.96);
+        --border: rgba(148, 163, 184, 0.28);
+        --border-subtle: rgba(148, 163, 184, 0.16);
         --accent: #60a5fa;
         --accent-strong: #3b82f6;
-        --danger: #f87171;
-        --text: #f3f5ff;
+        --danger: #f97373;
+        --danger-soft: rgba(248, 113, 113, 0.1);
+        --text: #f9fafb;
         --muted: #94a3b8;
-        --radius: 18px;
-        --ring: 0 0 0 3px rgba(96, 165, 250, 0.35);
+        --radius-lg: 20px;
+        --radius-md: 12px;
+        --ring: 0 0 0 1px rgba(148, 163, 184, 0.5),
+          0 0 0 4px rgba(96, 165, 250, 0.35);
       }
+
       * {
         box-sizing: border-box;
       }
+
       body {
-        min-height: 100vh;
         margin: 0;
+        min-height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 24px;
         color: var(--text);
         background: radial-gradient(
-            circle at 10% 20%,
-            rgba(76, 201, 240, 0.18),
-            transparent 40%
+            circle at 0 0,
+            rgba(56, 189, 248, 0.22),
+            transparent 55%
           ),
           radial-gradient(
-            circle at 90% 10%,
-            rgba(139, 92, 246, 0.18),
-            transparent 35%
+            circle at 100% 0,
+            rgba(129, 140, 248, 0.22),
+            transparent 55%
           ),
-          linear-gradient(165deg, #050812 0%, #090f1f 60%, #05070f 100%);
+          radial-gradient(
+            circle at 50% 100%,
+            rgba(52, 211, 153, 0.18),
+            transparent 55%
+          ),
+          linear-gradient(160deg, #020617 0%, #020617 45%, #020617 100%);
       }
+
       main {
-        width: min(420px, 100%);
+        width: 100%;
+        max-width: 420px;
       }
+
       .login-card {
         background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 32px;
-        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.55);
-        -webkit-backdrop-filter: blur(12px);
-        backdrop-filter: blur(12px);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-subtle);
+        padding: 32px 28px 26px;
+        box-shadow: 0 26px 80px rgba(15, 23, 42, 0.75),
+          0 0 0 1px rgba(15, 23, 42, 0.9);
+        -webkit-backdrop-filter: blur(16px);
+        backdrop-filter: blur(16px);
       }
+
       .login-logo {
         display: block;
-        margin: 0 auto 16px;
+        margin: 4px auto 18px;
         width: 64px;
         height: 64px;
-        border-radius: 16px;
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        background: radial-gradient(circle at 30% 0, #035774, #00335dbb);
+        object-fit: cover;
       }
+
       .login-header {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        margin-bottom: 16px;
-        justify-content: center;
+        text-align: center;
+        margin-bottom: 45px;
       }
-      .login-header img {
-        width: 48px;
-        height: 48px;
+
+      #loginUsername {
+        height: 44px !important;
+        padding: 0 12px !important;
         border-radius: 12px;
+        border: 1px solid var(--border-subtle) !important;
+        background: rgba(15, 23, 42, 0.9) !important;
+        color: var(--text) !important;
+        font-size: 0.96rem !important;
+        display: block;
       }
       h1 {
-        font-size: 1.5rem;
+        font-size: 1.6rem;
         margin: 0;
+        letter-spacing: -0.03em;
       }
+
       p.subtitle {
-        margin: 4px 0 24px;
+        margin: 8px 0 24px;
         color: var(--muted);
         font-size: 0.95rem;
       }
+
       form {
         display: flex;
         flex-direction: column;
         gap: 16px;
       }
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: 0.84rem;
+        font-weight: 500;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
       .input-with-icon {
         position: relative;
         display: flex;
         align-items: center;
       }
+
       .input-with-icon input {
-        padding-right: 44px;
+        padding-right: 46px;
       }
+
       .input-with-icon button {
         position: absolute;
-        right: 6px;
+        right: 8px;
         top: 50%;
         transform: translateY(-50%);
         border: none;
         background: transparent;
         color: var(--muted);
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
         cursor: pointer;
         display: grid;
         place-items: center;
-        transition: color 0.2s ease;
+        transition: background 0.15s ease, color 0.15s ease,
+          transform 0.15s ease;
       }
-      .input-with-icon button:focus-visible {
-        outline: none;
-        box-shadow: none;
-      }
+
       .input-with-icon button:hover {
+        background: rgba(15, 23, 42, 0.9);
         color: var(--text);
+        transform: translateY(-50%) scale(1.02);
       }
+
       .icon-eye {
         width: 18px;
         height: 18px;
       }
+
       .icon-eye.hidden {
         display: none;
-      }
-      label {
-        display: block;
-        margin-bottom: 6px;
-        color: var(--muted);
-        font-size: 0.85rem;
       }
       input[type="text"],
       input[type="password"] {
         width: 100%;
-        padding: 12px 14px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        background: rgba(5, 8, 18, 0.65);
+        padding: 11px 12px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-subtle);
+        background: rgba(15, 23, 42, 0.9);
         color: var(--text);
-        font-size: 1rem;
-        transition: border 0.15s ease, box-shadow 0.15s ease;
+        font-size: 0.96rem;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease,
+          background 0.15s ease, transform 0.05s ease;
       }
+
+      input::placeholder {
+        color: rgba(148, 163, 184, 0.7);
+      }
+
       input:focus-visible {
         outline: none;
         border-color: var(--accent);
         box-shadow: var(--ring);
+        background: rgba(15, 23, 42, 1);
       }
+
+      input.input-error {
+        border-color: var(--danger);
+        background: var(--danger-soft);
+      }
+
       button[type="submit"] {
+        margin-top: 4px;
         border: none;
-        border-radius: 12px;
-        padding: 12px;
+        border-radius: 999px;
+        padding: 11px 14px;
         font-weight: 600;
-        font-size: 1rem;
+        font-size: 0.98rem;
         cursor: pointer;
         background: linear-gradient(
           120deg,
@@ -165,34 +218,59 @@
           var(--accent-strong)
         );
         color: #020617;
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: transform 0.18s ease, box-shadow 0.18s ease,
+          filter 0.18s ease, opacity 0.15s ease;
       }
-      button[type="submit"]:disabled {
-        opacity: 0.65;
-        cursor: not-allowed;
-      }
+
       button[type="submit"]:not(:disabled):hover {
         transform: translateY(-1px);
-        box-shadow: 0 7px 20px rgba(96, 165, 250, 0.35);
+        box-shadow: 0 10px 32px rgba(37, 99, 235, 0.45);
+        filter: brightness(1.05);
       }
+
+      button[type="submit"]:not(:disabled):active {
+        transform: translateY(0);
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+      }
+
+      button[type="submit"]:disabled {
+        opacity: 0.7;
+        cursor: wait;
+        box-shadow: none;
+      }
+
       .login-msg {
-        min-height: 20px;
-        font-size: 0.92rem;
+        min-height: 18px;
+        font-size: 0.86rem;
         color: var(--muted);
+        margin-top: 4px;
       }
+
       .login-msg.show {
         color: var(--danger);
       }
+
       .login-info {
         margin-top: 20px;
         font-size: 0.85rem;
         color: var(--muted);
         text-align: center;
       }
+
       .login-info a {
         color: var(--accent);
         text-decoration: none;
+        font-weight: 500;
       }
+
+      .login-info a:hover {
+        text-decoration: underline;
+      }
+
       .screen-reader-only {
         position: absolute;
         width: 1px;
@@ -209,11 +287,11 @@
           padding: 16px;
         }
         .login-card {
-          padding: 24px;
+          padding: 24px 20px 22px;
+          border-radius: 18px;
         }
-        .login-header {
-          flex-direction: column;
-          align-items: flex-start;
+        h1 {
+          font-size: 1.4rem;
         }
       }
     </style>
@@ -225,27 +303,27 @@
           src="/media/warest-logo.png"
           alt="WARest Logo"
           class="login-logo"
-          width="48"
-          height="48"
+          width="64"
+          height="64"
         />
         <div class="login-header">
-          <div>
-            <h1 id="login-title">Sign in to WARest</h1>
-          </div>
+          <h1 id="login-title">Sign in to WARest</h1>
         </div>
+
         <form id="loginForm" novalidate>
-          <div>
+          <div class="field-group">
             <label for="loginUsername">Username</label>
             <input
               id="loginUsername"
               name="username"
               type="text"
               autocomplete="username"
-              placeholder="Enter username"
+              placeholder="Enter your username"
               required
             />
           </div>
-          <div>
+
+          <div class="field-group">
             <label for="loginPassword">Password</label>
             <div class="input-with-icon">
               <input
@@ -253,7 +331,7 @@
                 name="password"
                 type="password"
                 autocomplete="current-password"
-                placeholder="Enter password"
+                placeholder="Enter your password"
                 required
               />
               <button
@@ -294,6 +372,8 @@
               </button>
             </div>
           </div>
+
+          <!-- Honeypot anti-bot -->
           <input
             id="loginWebsite"
             type="text"
@@ -302,21 +382,26 @@
             aria-hidden="true"
             autocomplete="off"
           />
-          <div class="login-msg" id="loginError" aria-live="polite"></div>
-          <button type="submit" id="loginSubmit">Sign In</button>
+
+          <div
+            class="login-msg"
+            id="loginError"
+            aria-live="polite"
+            role="status"
+          ></div>
+
+          <button type="submit" id="loginSubmit">Sign in</button>
         </form>
-        <p class="login-info">Need help? Contact your WARest administrator.</p>
       </section>
     </main>
+
     <script src="/auth.js"></script>
     <script>
       (() => {
         const params = new URLSearchParams(window.location.search || "");
         const nextRaw = params.get("next") || "/";
         const reason = params.get("reason") || "";
-        const subtitle = document.getElementById("loginSubtitle");
         const errBox = document.getElementById("loginError");
-        if (reason && subtitle) subtitle.textContent = reason;
 
         const form = document.getElementById("loginForm");
         const btn = document.getElementById("loginSubmit");
@@ -325,6 +410,19 @@
         const honeypot = document.getElementById("loginWebsite");
         const togglePassword = document.getElementById("togglePassword");
         const AUTH = window.WAREST_AUTH || null;
+
+        const setFieldErrorState = (hasError) => {
+          if (!usernameInput || !passwordInput) return;
+          [usernameInput, passwordInput].forEach((el) => {
+            if (hasError) {
+              el.classList.add("input-error");
+              el.setAttribute("aria-invalid", "true");
+            } else {
+              el.classList.remove("input-error");
+              el.removeAttribute("aria-invalid");
+            }
+          });
+        };
 
         const showAutoRedirect = (msg) => {
           if (subtitle) {
@@ -386,7 +484,7 @@
 
         try {
           const savedUser = localStorage.getItem("wa.username");
-          if (savedUser) usernameInput.value = savedUser;
+          if (savedUser && usernameInput) usernameInput.value = savedUser;
         } catch {}
 
         const buildTarget = () => {
@@ -406,18 +504,24 @@
         form.addEventListener("submit", async (event) => {
           event.preventDefault();
           if (honeypot.value.trim()) return;
+
           const username = usernameInput.value.trim();
           const password = passwordInput.value;
+          setFieldErrorState(false);
+
           if (!username || !password) {
             errBox.textContent = "Username and password are required.";
             errBox.classList.add("show");
+            setFieldErrorState(true);
             return;
           }
+
           const defaultText = btn.textContent;
           btn.disabled = true;
           btn.textContent = "Signing in...";
           errBox.textContent = "";
           errBox.classList.remove("show");
+
           try {
             const resp = await fetch("/api/auth/login", {
               method: "POST",
@@ -425,7 +529,9 @@
               body: JSON.stringify({ username, password }),
               credentials: "same-origin",
             });
+
             const data = await resp.json().catch(() => ({}));
+
             if (!resp.ok) {
               const retryAfter = data?.retryAfter;
               let message =
@@ -435,6 +541,7 @@
               }
               throw new Error(message);
             }
+
             try {
               const auth = window.WAREST_AUTH;
               if (auth && typeof auth.setSession === "function") {
@@ -455,10 +562,12 @@
                 localStorage.setItem("wa.isAdmin", data.isAdmin ? "1" : "");
               }
             } catch {}
+
             redirectAfterLogin();
           } catch (err) {
             errBox.textContent = err?.message || "Login failed.";
             errBox.classList.add("show");
+            setFieldErrorState(true);
           } finally {
             btn.disabled = false;
             btn.textContent = defaultText;

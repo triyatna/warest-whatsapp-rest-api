@@ -5,6 +5,7 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Server } from "socket.io";
 import helmet from "helmet";
+import compression from "compression";
 import cors from "cors";
 import YAML from "yaml";
 
@@ -28,7 +29,7 @@ import authRouter, {
   DOCS_COOKIE_BASE_OPTIONS,
   DOCS_COOKIE_NAME,
 } from "./routes/auth.js";
-import ui from "./routes/ui.js";
+import ui, { getMinifiedHtml } from "./routes/ui.js";
 import profiles from "./routes/profiles.js";
 import groups from "./routes/groups.js";
 import servers from "./routes/servers.js";
@@ -47,12 +48,14 @@ import {
 import { CODES } from "./utils/code.js";
 
 const app = express();
+app.use(
+  compression({
+    threshold: 0,
+  })
+);
 app.set("logger", logger);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const LOGIN_PAGE_PATH = path.join(__dirname, "./ui/login.html");
-const DOCS_PAGE_PATH = path.join(__dirname, "./ui/docs.html");
-
 const OPENAPI_PATH = path.join(__dirname, "./ui/openapi.yaml");
 const openapiCache = { mtimeMs: 0, doc: null };
 let openapiWarned = false;
@@ -362,14 +365,24 @@ app.use(
   })
 );
 
-app.get("/login", (req, res) => {
-  res.setHeader("Cache-Control", "no-store");
-  res.sendFile(LOGIN_PAGE_PATH);
+app.get("/login", async (req, res, next) => {
+  try {
+    const html = await getMinifiedHtml("login.html");
+    res.setHeader("Cache-Control", "no-store");
+    res.type("html").send(html);
+  } catch (err) {
+    next(err);
+  }
 });
 
-app.get("/docs", (req, res) => {
-  res.setHeader("Cache-Control", "no-store");
-  res.sendFile(DOCS_PAGE_PATH);
+app.get("/docs", async (req, res, next) => {
+  try {
+    const html = await getMinifiedHtml("docs.html");
+    res.setHeader("Cache-Control", "no-store");
+    res.type("html").send(html);
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.use("/", ui);

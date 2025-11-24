@@ -43,6 +43,7 @@ import { createStoreManager } from "./storeManager.js";
 import { storage } from "../drivers/storage.js";
 import { createCacheStore } from "../drivers/cache.js";
 import pkg from "../../package.json" with { type: "json" };
+import QRCode from "qrcode";
 import {
   acquireProxyAgent,
   releaseProxy,
@@ -59,6 +60,7 @@ const qrCache = createCacheStore({
   ttlSeconds: 60,
   name: "qr-cache",
 });
+const qrImageDataCache = new Map();
 const qrTiming = new Map();
 const pairingCodeCache = createCacheStore({
   namespace: "whatsapp:pairing",
@@ -479,6 +481,40 @@ async function invalidateSessionsCache() {
     await sessionsListCache.delete(SESSIONS_LIST_KEY);
   } catch (err) {
     logger.warn({ err: err?.message }, "failed to invalidate sessions cache");
+  }
+}
+
+function rememberQrDataUrl(raw, dataUrl) {
+  if (!raw || !dataUrl) return;
+  try {
+    const key = raw;
+    if (qrImageDataCache.has(key)) {
+      clearTimeout(qrImageDataCache.get(key)?.timer);
+    }
+    const timer = setTimeout(() => {
+      qrImageDataCache.delete(key);
+    }, 60_000);
+    timer.unref?.();
+    qrImageDataCache.set(key, { dataUrl, timer });
+  } catch {}
+}
+
+async function buildQrDataUrl(raw) {
+  if (!raw || typeof raw !== "string" || raw.length < 8) return null;
+  const cached = qrImageDataCache.get(raw);
+  if (cached?.dataUrl) return cached.dataUrl;
+  try {
+    const buf = await QRCode.toBuffer(raw, {
+      width: 320,
+      margin: 1,
+      errorCorrectionLevel: "M",
+    });
+    const dataUrl = `data:image/png;base64,${buf.toString("base64")}`;
+    rememberQrDataUrl(raw, dataUrl);
+    return dataUrl;
+  } catch (err) {
+    logger.warn({ err: err?.message }, "qr data url encoding failed");
+    return null;
   }
 }
 
@@ -1071,6 +1107,189 @@ async function startSocket(sctx) {
     sock.store = sctx.store;
   } catch {}
 
+  const selfBareJid = () => {
+    const raw = String(
+      sock?.user?.id || sock?.user?.jid || sctx.me?.id || ""
+    ).trim();
+    if (!raw) return "";
+    return stripDeviceFromJid(raw);
+  };
+  const matchSelfContact = (entries = []) => {
+    const meJid = selfBareJid();
+    if (!meJid) return null;
+    for (const entry of entries) {
+      if (!entry) continue;
+      const candidates = [
+        entry.jid,
+        entry.id,
+        entry.user,
+        entry.wid,
+        entry.waid,
+        entry.lidJid,
+      ];
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        const normalized =
+          canonicalizeUserJidLike(candidate) ||
+          (typeof candidate === "string" && candidate.includes("@")
+            ? stripDeviceFromJid(candidate)
+            : null);
+        if (normalized && stripDeviceFromJid(normalized) === meJid) {
+          return { meJid, contact: entry };
+        }
+      }
+    }
+    return null;
+  };
+  const extractContactName = (contact) => {
+    const sources = [
+      contact?.verifiedName,
+      contact?.name,
+      contact?.notify,
+      contact?.pushName,
+      contact?.pushname,
+      contact?.shortName,
+      contact?.displayName,
+      contact?.fullName,
+      contact?.formattedName,
+    ];
+    for (const value of sources) {
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (trimmed) return trimmed;
+      }
+    }
+    return null;
+  };
+  const syncSelfProfileFromContacts = async (entries = []) => {
+    try {
+      const hit = matchSelfContact(entries);
+      if (!hit) return false;
+      const nextName = extractContactName(hit.contact);
+      if (!nextName) return false;
+      if (nextName === sctx.pushName) return false;
+      const meJid = hit.meJid;
+      const mePhone = meJid.includes("@") ? meJid.split("@")[0] : meJid;
+      sctx.pushName = nextName;
+      const mergedMe = {
+        ...(sctx.me || sock?.user || {}),
+        id: meJid,
+        jid: meJid,
+        name: nextName,
+      };
+      sctx.me = mergedMe;
+      if (sock?.user) sock.user.name = nextName;
+      const meta = getSessionMeta(sctx.id) || {};
+      const list = Array.isArray(meta.sessionProfile)
+        ? [...meta.sessionProfile]
+        : [];
+      const idx = list.findIndex((entry) => {
+        const jidMatch =
+          typeof entry?.jid === "string" &&
+          stripDeviceFromJid(entry.jid) === meJid;
+        const phoneDigits = String(entry?.phone || "")
+          .split("@")[0]
+          .replace(/\D+/g, "");
+        const meDigits = String(mePhone || "").replace(/\D+/g, "");
+        const phoneMatch = phoneDigits && phoneDigits === meDigits;
+        return jidMatch || phoneMatch;
+      });
+      const updatedEntry = {
+        ...(idx >= 0 ? list[idx] : {}),
+        pushname: nextName,
+        phone: mePhone,
+        jid: meJid,
+      };
+      if (idx >= 0) list[idx] = updatedEntry;
+      else list.push(updatedEntry);
+      upsertSessionMeta({ id: sctx.id, sessionProfile: list });
+      await invalidateSessionsCache();
+      return true;
+    } catch (err) {
+      logger.warn(
+        { err: err?.message, id: sctx.id },
+        "self contact sync failed"
+      );
+      return false;
+    }
+  };
+  let selfProfileHydrationTimer = null;
+  let selfProfileHydrationAttempts = 0;
+  const stopSelfProfileHydration = () => {
+    if (selfProfileHydrationTimer) {
+      clearTimeout(selfProfileHydrationTimer);
+      selfProfileHydrationTimer = null;
+    }
+  };
+  const ensureSelfProfileHydration = () => {
+    if (sctx.pushName) {
+      stopSelfProfileHydration();
+      return;
+    }
+    if (selfProfileHydrationTimer) return;
+    selfProfileHydrationAttempts = 0;
+    const run = async () => {
+      if (sctx.pushName) {
+        stopSelfProfileHydration();
+        return;
+      }
+      if (selfProfileHydrationAttempts >= 20) {
+        stopSelfProfileHydration();
+        return;
+      }
+      selfProfileHydrationAttempts += 1;
+      try {
+        const src =
+          sctx.store?.contacts ||
+          sctx.sock?.store?.contacts ||
+          sctx.sock?.contacts ||
+          null;
+        const arr =
+          src instanceof Map
+            ? [...src.values()]
+            : Array.isArray(src)
+            ? src
+            : src && typeof src === "object"
+            ? Object.values(src)
+            : [];
+        if (arr.length) {
+          const ok = await syncSelfProfileFromContacts(arr);
+          if (ok) {
+            stopSelfProfileHydration();
+            return;
+          }
+        }
+      } catch {}
+      selfProfileHydrationTimer = setTimeout(() => {
+        selfProfileHydrationTimer = null;
+        ensureSelfProfileHydration();
+      }, 2000);
+      selfProfileHydrationTimer.unref?.();
+    };
+    run();
+  };
+  const handleSelfContactPayload = (payload) => {
+    const arr = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.contacts)
+      ? payload.contacts
+      : Array.isArray(payload?.contacts?.contacts)
+      ? payload.contacts.contacts
+      : [];
+    if (!arr.length) {
+      ensureSelfProfileHydration();
+      return;
+    }
+    syncSelfProfileFromContacts(arr)
+      .then((ok) => {
+        if (ok) stopSelfProfileHydration();
+        else ensureSelfProfileHydration();
+      })
+      .catch(() => ensureSelfProfileHydration());
+  };
+
+  ensureSelfProfileHydration();
+
   sock.ev.on("creds.update", async () => {
     await sctx.saveCreds();
     try {
@@ -1089,7 +1308,11 @@ async function startSocket(sctx) {
         "Received messaging history snapshot"
       );
     } catch {}
+    handleSelfContactPayload(m?.contacts);
   });
+  sock.ev.on("contacts.update", handleSelfContactPayload);
+  sock.ev.on("contacts.upsert", handleSelfContactPayload);
+  sock.ev.on("contacts.set", handleSelfContactPayload);
   sock.ev.on("connection.update", async (u) => {
     const { connection, lastDisconnect, qr } = u;
 
@@ -1103,14 +1326,18 @@ async function startSocket(sctx) {
         if (delta >= 5 && delta <= 65) ttl = delta;
       }
       qrTiming.set(sctx.id, { lastAt: now, lastTtl: ttl });
-      sctx.socketServer
-        ?.to(sctx.id)
-        .emit("qr", { id: sctx.id, qr, qrDuration: ttl });
+      let qrDataUrl = null;
+      try {
+        qrDataUrl = await buildQrDataUrl(qr);
+      } catch {}
+      const qrPayload = { id: sctx.id, qr, qrDuration: ttl };
+      if (qrDataUrl) qrPayload.qrDataUrl = qrDataUrl;
+      sctx.socketServer?.to(sctx.id).emit("qr", qrPayload);
       try {
         await emitWebhook(
           "session_status",
           "session_status",
-          { id: sctx.id, tags: "qr", qr, qrDuration: ttl },
+          { id: sctx.id, tags: "qr", qr: qrDataUrl || qr, qrDuration: ttl },
           sctx
         );
       } catch {}
@@ -1218,6 +1445,7 @@ async function startSocket(sctx) {
       } catch (e) {
         logger.error({ err: e?.message }, "resyncMainAppState failed");
       }
+      ensureSelfProfileHydration();
       setTimeout(() => {
         sctx.store?.flush?.().catch(() => {});
       }, 1500);
@@ -1254,6 +1482,7 @@ async function startSocket(sctx) {
     }
 
     if (connection === "close") {
+      stopSelfProfileHydration();
       let code = 0;
       if (isBoom(lastDisconnect?.error))
         code = lastDisconnect.error.output?.statusCode ?? 0;
