@@ -478,7 +478,18 @@ Usage (n8n):
 
 ---
 
-## Changelog Snapshot (0.3.41)
+## Changelog Snapshot
+
+### v0.3.44 (2025-12-12)
+
+- Baileys downgraded to 6.7.19 to fix read receipts issue.
+- Fixes to README examples and docs.
+
+### v0.3.42 (2025-12-05)
+
+- Baileys upgraded to 6.7.21.
+
+### v0.3.41 (2025-11-21)
 
 - Base image upgraded to Node 22.
 - OpenAPI 1.3.42 shipped to `/docs`.
