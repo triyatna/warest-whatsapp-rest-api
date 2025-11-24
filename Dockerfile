@@ -16,18 +16,19 @@ FROM base AS runner
 ARG BUILD_VERSION=0.3.44
 ARG BUILD_COMMIT=unknown
 ARG BUILD_DATE=unknown
-LABEL org.opencontainers.image.title="warest-whatsapp-rest-api" \
-      org.opencontainers.image.description="WARest - WhatsApp Rest API Multi Sessions Unofficial" \
-      org.opencontainers.image.version="${BUILD_VERSION}" \
-      org.opencontainers.image.revision="${BUILD_COMMIT}" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.source="https://github.com/triyatna/warest-whatsapp-rest-api" \
-      org.opencontainers.image.documentation="https://github.com/triyatna/warest-whatsapp-rest-api#readme"
 
-ENV NODE_ENV=production \
-    HOST=0.0.0.0 \
-    PORT=7308
+LABEL org.opencontainers.image.title="warest-whatsapp-rest-api"
+LABEL org.opencontainers.image.description="WARest - WhatsApp Rest API Multi Sessions Unofficial"
+LABEL org.opencontainers.image.version="${BUILD_VERSION}"
+LABEL org.opencontainers.image.revision="${BUILD_COMMIT}"
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.source="https://github.com/triyatna/warest-whatsapp-rest-api"
+LABEL org.opencontainers.image.documentation="https://github.com/triyatna/warest-whatsapp-rest-api#readme"
+
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=7308
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY package*.json ./
